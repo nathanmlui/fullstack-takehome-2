@@ -1,8 +1,18 @@
+:root {
+  --bg-light1: #1a1a1a;
+  --bg-light2: #161514;
+  --border-grey: #2d2d2d;
+}
+
+.element {
+  background-color: var(--bg-dark);
+}
+
 body {
   height: 100vh;
   background: #000;
   color: #fff;
-  font-family: "Inter", monospace;
+  font-family: "IBM Plex Mono", monospace;
 }
 
 .App {
@@ -26,7 +36,6 @@ body {
   align-items: center;
   margin-bottom: 20px;
   height: 48px;
-  font-family: "IBM Plex Mono", monospace;
 }
 
 .search-bar {
@@ -50,7 +59,7 @@ body {
   justify-content: space-between;
   padding-bottom: 20px;
   align-items: center;
-  border-bottom: 1px solid #2d2d2d;
+  border-bottom: 1px solid var(--border-grey);
 }
 
 .coin-info-row .icon-and-coin-name {
@@ -58,6 +67,12 @@ body {
   flex-direction: row;
   gap: 12px;
 }
+
+.icon-and-coin-name h2,
+.coin-info-row div p {
+  font-family: "Inter", monospace;
+}
+
 .coin-info-row div {
   display: flex;
   flex-direction: column;
@@ -65,7 +80,6 @@ body {
 }
 
 .coin-info-row h3 {
-  font-family: "IBM Plex Mono", monospace;
   font-size: 10px;
   font-weight: 400;
   text-align: left;
@@ -78,6 +92,79 @@ body {
   letter-spacing: 0.02em;
   text-align: left;
   margin-top: 0;
+}
+
+div.graph-and-actions {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.coin-chart {
+  flex-grow: 4;
+}
+
+.buy-sell-actions {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-light2);
+  padding: 20px;
+}
+
+.buy-sell-actions .tabs {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.buy-sell-actions .tabs .tab {
+  flex-grow: 1;
+  text-align: center;
+  border-bottom: 1px solid var(--border-grey);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 16.8px;
+  padding-bottom: 20px;
+}
+
+.buy-sell-actions .tabs:hover {
+  cursor: pointer;
+}
+
+.buy-sell-actions .tabs .active {
+  color: #ff5a44;
+  border-bottom: 1px solid #ff5a44;
+}
+
+.buy-sell-actions .actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+}
+
+.buy-sell-actions .actions .action .row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.buy-sell-actions div.label,
+.buy-sell-actions h4,
+.buy-sell-actions p {
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.calculated-values .row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
 }
 
 input {

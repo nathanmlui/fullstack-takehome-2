@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import classNames from "classnames";
+import brotliDecompressModule from "brotli-wasm";
 
 interface Ticker {
   symbol: string;
@@ -14,80 +15,105 @@ interface Ticker {
 }
 
 export default function CoinInfoRow() {
-  const coinName = "ETH-PERP"; // This will be set dynamically eg. via props or URL params
+  const coinName = "ETH-PERP";
   const coinShortName = coinName.slice(0, 3);
   const [ticker, setTicker] = useState<Ticker | null>(null);
-  const [isConnected, setIsConnected] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
   const [ws, setWs] = useState<WebSocket | null>(null);
+  const [brotliDecompress, setBrotliDecompress] = useState<any>(null);
+
+  useEffect(() => {
+    brotliDecompressModule.then((module) => {
+      setBrotliDecompress(module);
+    });
+  }, []);
 
   function isNegative(value: string) {
     return Number(value) < 0;
   }
 
   const connect = useCallback(() => {
-    const websocket = new WebSocket(
-      "wss://wsprod.vest.exchange/ws-api?version=1.0&xwebsocketserver=restserver0"
-    );
+    if (!brotliDecompress) return;
 
-    websocket.onopen = () => {
-      console.log("Connected to WebSocket");
-      setIsConnected(true);
-
-      websocket.send(
-        JSON.stringify({
-          method: "PING",
-          params: [],
-          id: 0,
-        })
+    try {
+      const websocket = new WebSocket(
+        "wss://wsprod.vest.exchange/ws-api?version=1.0&xwebsocketserver=restserver0"
       );
 
-      websocket.send(
-        JSON.stringify({
-          method: "SUBSCRIBE",
-          params: ["tickers"],
-          id: 1,
-        })
-      );
-    };
+      websocket.onopen = () => {
+        console.log("Connected to Ticker WebSocket");
+        setIsConnected(true);
 
-    websocket.onmessage = async (event) => {
-      try {
-        const rawData =
-          event.data instanceof Blob ? await event.data.text() : event.data;
-        const parsedData = JSON.parse(rawData);
+        websocket.send(
+          JSON.stringify({
+            method: "PING",
+            params: [],
+            id: 0,
+          })
+        );
 
-        if (parsedData.data === "PONG") {
-          console.log("PONG received");
-          return;
+        websocket.send(
+          JSON.stringify({
+            method: "SUBSCRIBE",
+            params: ["tickers"],
+            id: 1,
+          })
+        );
+      };
+
+      websocket.onmessage = async (event) => {
+        try {
+          let decodedData;
+          if (event.data instanceof Blob) {
+            const arrayBuffer = await event.data.arrayBuffer();
+            const uint8Array = new Uint8Array(arrayBuffer);
+
+            if (uint8Array[0] === 0x1b && uint8Array[1] === 0x9c) {
+              const decompressed = brotliDecompress.decompress(uint8Array);
+              decodedData = new TextDecoder().decode(decompressed);
+            } else {
+              decodedData = new TextDecoder().decode(uint8Array);
+            }
+          } else {
+            decodedData = event.data;
+          }
+
+          const parsedData = JSON.parse(decodedData);
+
+          if (parsedData.data === "PONG") {
+            console.log("PONG received");
+            return;
+          }
+
+          if (
+            parsedData.channel === "tickers" &&
+            Array.isArray(parsedData.data)
+          ) {
+            const ticker = parsedData.data.find(
+              (t: any) => t?.symbol === coinName
+            );
+            if (ticker) setTicker(ticker);
+          }
+        } catch (error) {
+          console.error("Message processing error:", error);
         }
+      };
 
-        if (
-          parsedData.channel === "tickers" &&
-          Array.isArray(parsedData.data)
-        ) {
-          const ticker = parsedData.data.find(
-            (t: any) => t?.symbol === coinName
-          );
-          if (ticker) setTicker(ticker);
-          console.log("ticker", ticker);
-        }
-      } catch (error) {
-        console.error("Message processing error:", error);
-      }
-    };
+      websocket.onerror = (error) => {
+        console.error("WebSocket error:", error);
+        setIsConnected(false);
+      };
 
-    websocket.onerror = (error) => {
-      console.error("WebSocket error:", error);
-      setIsConnected(false);
-    };
+      websocket.onclose = () => {
+        console.log("WebSocket closed");
+        setIsConnected(false);
+      };
 
-    websocket.onclose = () => {
-      console.log("WebSocket closed");
-      setIsConnected(false);
-    };
-
-    setWs(websocket);
-  }, [coinName]);
+      setWs(websocket);
+    } catch (error) {
+      console.error("Connection error:", error);
+    }
+  }, [brotliDecompress, coinName]);
 
   useEffect(() => {
     connect();

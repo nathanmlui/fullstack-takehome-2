@@ -66,6 +66,7 @@ body {
   display: flex;
   flex-direction: row;
   gap: 12px;
+  justify-content: flex-start;
 }
 
 .icon-and-coin-name h2,
@@ -77,6 +78,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  width: 200px;
 }
 
 .coin-info-row h3 {
@@ -102,7 +104,8 @@ div.graph-and-actions {
 }
 
 .coin-chart {
-  flex-grow: 4;
+  flex-grow: 2;
+  height: 500px;
 }
 
 .buy-sell-actions {
@@ -111,13 +114,13 @@ div.graph-and-actions {
   flex-direction: column;
   background-color: var(--bg-light2);
   padding: 20px;
+  height: 460px;
 }
 
 .buy-sell-actions .tabs {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  gap: 10px;
 }
 
 .buy-sell-actions .tabs .tab {

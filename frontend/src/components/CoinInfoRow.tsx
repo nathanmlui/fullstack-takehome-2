@@ -136,11 +136,7 @@ export default function CoinInfoRow() {
       </div>
       <div>
         <h3>24H CHANGE</h3>
-        <p
-          className={classNames({
-            red: isNegative(ticker?.priceChange || "0"),
-          })}
-        >
+        <p className={isNegative(ticker?.priceChange || "0") ? "red" : "green"}>
           {ticker?.priceChange && ticker?.priceChangePercent
             ? `$${ticker.priceChange} (${ticker.priceChangePercent}%)`
             : "-"}

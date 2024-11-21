@@ -1,7 +1,9 @@
 :root {
-  --bg-light1: #1a1a1a;
+  --bg-light1: #2b2b2b;
   --bg-light2: #161514;
   --border-grey: #2d2d2d;
+  --green: #4bc2a3;
+  --red: #ff5a44;
 }
 
 .element {
@@ -47,6 +49,7 @@ body {
   padding-left: 10px;
   flex-grow: 2;
   height: 100%;
+  background-color: var(--bg-light1);
 }
 
 .account-menu {
@@ -113,8 +116,10 @@ div.graph-and-actions {
   display: flex;
   flex-direction: column;
   background-color: var(--bg-light2);
-  padding: 20px;
-  height: 460px;
+  padding: 0 20px 20px 20px;
+  /* height: 460px;  Min height should be same as height of graph*/
+  gap: 12px;
+  max-width: 410px;
 }
 
 .buy-sell-actions .tabs {
@@ -130,11 +135,22 @@ div.graph-and-actions {
   font-size: 14px;
   font-weight: 400;
   line-height: 16.8px;
-  padding-bottom: 20px;
+  padding: 20px 0;
 }
 
-.buy-sell-actions .tabs:hover {
+.buy-sell-actions .tabs .tab:hover {
   cursor: pointer;
+  background-color: var(--bg-light1);
+}
+
+.buy-sell-actions .advanced:hover {
+  cursor: pointer;
+}
+
+.buy-sell-actions .advanced:hover .label,
+.buy-sell-actions .advanced:hover img {
+  color: white; /* For text elements */
+  filter: brightness(0) invert(1); /* For images */
 }
 
 .buy-sell-actions .tabs .active {
@@ -146,21 +162,69 @@ div.graph-and-actions {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 10px;
+  padding: 10px 0;
 }
 
-.buy-sell-actions .actions .action .row {
+.buy-sell-actions div.row {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: baseline;
+  gap: 12px;
 }
 
-.buy-sell-actions div.label,
+.buy-sell-actions .advanced div.row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.buy-sell-actions .advanced div.row h4 {
+  margin: 4px 0;
+}
+
+.buy-sell-actions .label,
 .buy-sell-actions h4,
 .buy-sell-actions p {
   font-size: 14px;
   font-weight: 400;
+  margin-bottom: 4px;
+}
+
+.buy-sell-actions .label {
+  color: #aeadad;
+}
+
+.buy-sell-actions span.input-and-coin {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.buy-sell-actions button {
+  width: 100%;
+  height: 44px;
+  background-color: var(--green);
+  border: none;
+  font-family: IBM Plex Mono;
+  font-size: 14px;
+  font-weight: 400;
+  text-decoration-skip-ink: none;
+  border-radius: 2px;
+  margin-top: 40px;
+}
+
+.buy-sell-actions button:hover {
+  background-color: #27a483;
+  cursor: pointer;
+}
+
+.calculated-values {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .calculated-values .row {
@@ -170,9 +234,126 @@ div.graph-and-actions {
   align-items: center;
 }
 
-input {
+.calculated-values h4,
+.calculated-values p {
+  margin: 0 0;
+}
+
+input,
+select {
   outline: none;
   border: none;
+  color: #fff;
+  width: 100%;
+  height: 48px;
+  background-color: var(--bg-light1);
+  border: none;
+  font-family: IBM Plex Mono;
+  font-size: 14px;
+  font-weight: 400;
+  padding: 0 8px;
+}
+
+.coin-label {
+  color: #fff;
+  height: 48px;
+  line-height: 45px;
+  background-color: var(--bg-light1);
+  border: none;
+  font-family: IBM Plex Mono;
+  font-size: 14px;
+  font-weight: 400;
+  padding: 0 8px;
+}
+
+.buy-sell-actions .current-leverage {
+  font-weight: 700;
+}
+
+.slider-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 16px;
+  padding: 10px 0;
+}
+
+.slider-root {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 20px;
+}
+
+.slider-track {
+  background-color: var(--bg-light1);
+  position: relative;
+  flex-grow: 1;
+  height: 4px;
+}
+
+.slider-range {
+  position: absolute;
+  background-color: var(--green);
+  height: 100%;
+  left: 0;
+}
+
+.slider-thumb {
+  display: block;
+  width: 20px;
+  height: 20px;
+  background-color: var(--green);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid white;
+}
+
+.slider-values {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.slider-value-and-tick {
+  position: absolute;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+/* Position each value based on its percentage of max (125) */
+.slider-value-and-tick:nth-child(1) {
+  left: 0%;
+} /* 0/125 */
+.slider-value-and-tick:nth-child(2) {
+  left: 1.6%;
+} /* 2/125 */
+.slider-value-and-tick:nth-child(3) {
+  left: 4%;
+} /* 5/125 */
+.slider-value-and-tick:nth-child(4) {
+  left: 8%;
+} /* 10/125 */
+.slider-value-and-tick:nth-child(5) {
+  left: 20%;
+} /* 25/125 */
+.slider-value-and-tick:nth-child(6) {
+  left: 40%;
+} /* 50/125 */
+.slider-value-and-tick:nth-child(7) {
+  left: 80%;
+} /* 100/125 */
+.slider-value-and-tick:nth-child(8) {
+  left: 100%;
+} /* 125/125 */
+
+.slider-value {
+  font-size: 12px;
+  color: #aeadad;
+  margin: 0;
 }
 
 h2 {
@@ -180,10 +361,6 @@ h2 {
   font-weight: 700;
   letter-spacing: 0.02em;
   text-align: left;
-}
-
-.search-bar input {
-  color: #fff;
 }
 
 .light1-bg {
@@ -195,11 +372,11 @@ h2 {
 }
 
 .green {
-  color: #4bc2a3;
+  color: var(--green);
 }
 
 .red {
-  color: #ff5a44;
+  color: (var(--red));
 }
 
 .App-link {

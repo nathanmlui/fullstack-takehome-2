@@ -28,7 +28,8 @@ export default function CoinChart() {
       close: parseFloat(kline[4]),
     });
 
-    return Array.isArray(data) ? data.map(formatSingle) : formatSingle(data);
+    // KLines response from WS is a single array of values, but REST response is an array of arrays
+    return Array.isArray(data[0]) ? data.map(formatSingle) : formatSingle(data);
   }, []);
 
   // Initialize Brotli once
@@ -167,6 +168,7 @@ export default function CoinChart() {
           if (parsedData.channel === channelName) {
             console.log("new kline message", parsedData.data);
             const update = formatKLineData(parsedData.data);
+            console.log("updating with", update);
             candlestickSeriesRef.current.update(update);
           }
         } catch (error) {

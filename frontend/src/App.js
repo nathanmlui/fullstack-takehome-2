@@ -1,21 +1,20 @@
-import logo from "./logo.svg";
 import "./App.css";
-import PageContainer from "./components/PageContainer.tsx";
+
+import MarketPage from "./pages/market/index.tsx";
+import Home from "./pages/home/index.tsx";
 import React from "react";
-import Header from "./components/Header.tsx";
-import CoinChart from "./components/CoinChart.tsx";
-import BuySellActions from "./components/BuySellActions.tsx";
+
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 function App() {
   return (
     <div className='App'>
-      <PageContainer>
-        <Header />
-        <div className='graph-and-actions'>
-          <CoinChart />
-          <BuySellActions />
-        </div>
-      </PageContainer>
+      <Router>
+        <Routes>
+          <Route path='/' element={<Home />} />
+          <Route path='/market/:marketSymbol' element={<MarketPage />} />
+        </Routes>
+      </Router>
     </div>
   );
 }

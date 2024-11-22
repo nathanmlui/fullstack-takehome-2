@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import classNames from "classnames";
 import brotliDecompressModule from "brotli-wasm";
+import { useParams, useNavigate } from "react-router-dom";
+import symbolToImageSource from "../../../helpers/symbolToImageSource";
 
 interface Ticker {
   symbol: string;
@@ -15,12 +17,32 @@ interface Ticker {
 }
 
 export default function CoinInfoRow() {
-  const coinName = "ETH-PERP";
-  const coinShortName = coinName.slice(0, 3);
+  const navigate = useNavigate();
+  const { marketSymbol } = useParams<{ marketSymbol: string }>();
+  const coinShortName = (marketSymbol || "").toUpperCase().slice(0, 3);
   const [ticker, setTicker] = useState<Ticker | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [brotliDecompress, setBrotliDecompress] = useState<any>(null);
+  const marketSelectOptions = ["ETH-PERP", "BTC-PERP"];
+  const [selectedMarketValue, setSelectedMarketValue] = useState(
+    (marketSymbol || "").toUpperCase()
+  );
+  const wsRef = useRef<WebSocket | null>(null);
+
+  function handleChange(event: React.ChangeEvent<HTMLSelectElement>) {
+    console.log("naving to", event.target.value);
+    setSelectedMarketValue(event.target.value);
+    navigate(`/market/${event.target.value.toLowerCase()}`);
+    // Clear existing ticker data when switching symbols
+    setTicker(null);
+
+    // Close existing WebSocket connection and create a new one
+    if (wsRef.current) {
+      wsRef.current.close();
+      setWs(null);
+    }
+  }
 
   useEffect(() => {
     brotliDecompressModule.then((module) => {
@@ -28,17 +50,21 @@ export default function CoinInfoRow() {
     });
   }, []);
 
-  function isNegative(value: string) {
-    return Number(value) < 0;
-  }
-
   const connect = useCallback(() => {
     if (!brotliDecompress) return;
+
+    // Close existing connection if any
+    if (wsRef.current) {
+      wsRef.current.close();
+    }
 
     try {
       const websocket = new WebSocket(
         "wss://wsprod.vest.exchange/ws-api?version=1.0&xwebsocketserver=restserver0"
       );
+      // Store the WebSocket instance in both state and ref
+      wsRef.current = websocket;
+      setWs(websocket);
 
       websocket.onopen = () => {
         console.log("Connected to Ticker WebSocket");
@@ -90,7 +116,7 @@ export default function CoinInfoRow() {
             Array.isArray(parsedData.data)
           ) {
             const ticker = parsedData.data.find(
-              (t: any) => t?.symbol === coinName
+              (t: any) => t?.symbol === selectedMarketValue
             );
             if (ticker) setTicker(ticker);
           }
@@ -107,13 +133,16 @@ export default function CoinInfoRow() {
       websocket.onclose = () => {
         console.log("WebSocket closed");
         setIsConnected(false);
+        if (wsRef.current === websocket) {
+          wsRef.current = null;
+        }
       };
 
       setWs(websocket);
     } catch (error) {
       console.error("Connection error:", error);
     }
-  }, [brotliDecompress, coinName]);
+  }, [brotliDecompress, selectedMarketValue]);
 
   useEffect(() => {
     connect();
@@ -122,13 +151,20 @@ export default function CoinInfoRow() {
         ws.close();
       }
     };
-  }, [connect]);
+  }, [connect, selectedMarketValue]);
 
   return (
     <section className='coin-info-row'>
       <div className='icon-and-coin-name'>
-        <img src='/eth-icon.svg' alt='ETH logo' />
-        <h2>{ticker?.symbol || "Loading..."}</h2>
+        <img src={symbolToImageSource(marketSymbol)} alt='Coin logo' />
+        <h2>{selectedMarketValue}</h2>
+        <select value={selectedMarketValue} onChange={handleChange}>
+          {marketSelectOptions.map((marketSelectOption) => (
+            <option key={marketSelectOption} value={marketSelectOption}>
+              {marketSelectOption}
+            </option>
+          ))}
+        </select>
       </div>
       <div>
         <h3>PRICE</h3>
@@ -136,7 +172,7 @@ export default function CoinInfoRow() {
       </div>
       <div>
         <h3>24H CHANGE</h3>
-        <p className={isNegative(ticker?.priceChange || "0") ? "red" : "green"}>
+        <p className={Number(ticker?.priceChange) || 0 < 0 ? "red" : "green"}>
           {ticker?.priceChange && ticker?.priceChangePercent
             ? `$${ticker.priceChange} (${ticker.priceChangePercent}%)`
             : "-"}
@@ -150,14 +186,14 @@ export default function CoinInfoRow() {
         <h3>LONG OPEN INTEREST</h3>
         <p className='green'>
           {ticker?.imbalance || "-"}
-          {` ${coinShortName}`}
+          {` ${selectedMarketValue.slice(0, 3)}`}
         </p>
       </div>
       <div>
         <h3>SHORT OPEN INTEREST</h3>
         <p className='green'>
           {ticker?.imbalance || "-"}
-          {` ${coinShortName}`}
+          {` ${selectedMarketValue.slice(0, 3)}`}
         </p>
       </div>
     </section>

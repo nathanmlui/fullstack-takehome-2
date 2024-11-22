@@ -1,14 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
-import brotliDecompressModule from "brotli-wasm";
-
+// In progress
+import { useEffect, useRef, useState, useCallback } from "react";
 interface WebSocketConfig {
   url: string;
-  onMessage: (parsedData: any) => void;
-  subscriptions: {
-    method: string;
-    params: string[];
-    id: number;
-  }[];
+  onMessage: (data: any) => void;
+  subscriptions: any[];
 }
 
 export function useWebSocket({
@@ -20,18 +15,15 @@ export function useWebSocket({
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [brotliDecompress, setBrotliDecompress] = useState<any>(null);
 
-  // Initialize Brotli
+  // Store subscriptions in a ref to prevent reconnections
+  const subscriptionsRef = useRef(subscriptions);
+  const onMessageRef = useRef(onMessage);
+
+  // Update refs when props change
   useEffect(() => {
-    let mounted = true;
-    brotliDecompressModule.then((module) => {
-      if (mounted) {
-        setBrotliDecompress(module);
-      }
-    });
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    subscriptionsRef.current = subscriptions;
+    onMessageRef.current = onMessage;
+  }, [subscriptions, onMessage]);
 
   const connect = useCallback(() => {
     if (!brotliDecompress) return;
@@ -43,8 +35,8 @@ export function useWebSocket({
         console.log("Connected to WebSocket");
         setIsConnected(true);
 
-        // Send all subscriptions
-        subscriptions.forEach((subscription) => {
+        // Use ref value for subscriptions
+        subscriptionsRef.current.forEach((subscription) => {
           websocket.send(JSON.stringify(subscription));
         });
       };
@@ -73,7 +65,8 @@ export function useWebSocket({
             return;
           }
 
-          onMessage(parsedData);
+          // Use ref value for onMessage
+          onMessageRef.current(parsedData);
         } catch (error) {
           console.error("Message processing error:", error);
         }
@@ -93,7 +86,7 @@ export function useWebSocket({
     } catch (error) {
       console.error("Connection error:", error);
     }
-  }, [brotliDecompress, url, subscriptions, onMessage]);
+  }, [brotliDecompress, url]); // Removed subscriptions and onMessage dependencies
 
   useEffect(() => {
     if (brotliDecompress) {

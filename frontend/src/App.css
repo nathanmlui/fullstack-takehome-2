@@ -54,6 +54,30 @@ body {
 
 .account-menu {
   display: flex;
+  padding: 12px;
+  gap: 8px;
+  align-items: center;
+  height: 100%;
+}
+
+.account-menu .account {
+  display: flex;
+  gap: 8px;
+  padding: 0 8px;
+}
+
+.account-menu button {
+  /* background-color: var(--bg-light1); */
+  height: 100%;
+  border: none;
+  /* border-radius: 50%; */
+  padding: 8px;
+  background-color: black;
+  width: 48px;
+}
+
+.account-menu button img {
+  height: 22px;
 }
 
 .coin-info-row {
@@ -103,7 +127,7 @@ div.graph-and-actions {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .coin-chart {
@@ -138,7 +162,9 @@ div.graph-and-actions {
   padding: 20px 0;
 }
 
-.buy-sell-actions .tabs .tab:hover {
+.buy-sell-actions .tabs .tab:hover,
+.account-menu .notifications:hover,
+.account-menu .account:hover {
   cursor: pointer;
   background-color: var(--bg-light1);
 }
@@ -213,12 +239,26 @@ div.graph-and-actions {
   font-weight: 400;
   text-decoration-skip-ink: none;
   border-radius: 2px;
-  margin-top: 40px;
 }
 
 .buy-sell-actions button:hover {
   background-color: #27a483;
   cursor: pointer;
+}
+
+.buy-sell-actions .button-container {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.buy-sell-actions .confetti-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 10;
 }
 
 .calculated-values {
@@ -316,6 +356,7 @@ select {
   flex-direction: row;
   width: 100%;
   margin-top: 8px;
+  align-items: center;
 }
 
 .slider-value-and-tick {
@@ -356,6 +397,31 @@ select {
   margin: 0;
 }
 
+.emoji-bar {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 20px;
+  margin: 10px 0;
+  width: 200px;
+  background-color: var(--bg-light2);
+  border-radius: 25px;
+}
+
+.emoji-bar .emoji {
+  height: 20px;
+  width: 20px;
+  padding: 8px;
+  text-align: center;
+}
+
+.emoji-bar .emoji:hover {
+  background-color: rgb(52, 52, 52);
+  border-radius: 30px;
+  cursor: pointer;
+}
+
 h2 {
   font-size: 14px;
   font-weight: 700;
@@ -376,7 +442,7 @@ h2 {
 }
 
 .red {
-  color: (var(--red));
+  color: var(--red);
 }
 
 .App-link {

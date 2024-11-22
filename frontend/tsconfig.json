@@ -8,5 +8,5 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src", "src/components/Header.tsx"]
+  "include": ["src", "src/pages/market/components/Header.tsx"]
 }

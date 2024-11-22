@@ -1,16 +1,31 @@
 import React, { useState } from "react";
 import * as Slider from "@radix-ui/react-slider";
+import useSound from "use-sound";
+import ConfettiExplosion from "react-confetti-explosion";
 
 export default function BuySellActions() {
   const TAB_OPTIONS: string[] = ["LONG", "SHORT"];
   const ORDER_TYPES: string[] = ["MARKET", "LIMIT", "STOP", "TRAILING STOP"];
   const LEVERAGE_OPTIONS: number[] = [0, 2, 5, 10, 25, 50, 100, 125];
+  const soundUrl = "/Ping.wav";
   const [leverage, setLeverage] = useState(0);
   const [selectedTab, setSelectedTab] = useState<string>(TAB_OPTIONS[0]);
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
+  const [playActive] = useSound(soundUrl, {
+    volume: 0.25,
+  });
+  const [isExploding, setIsExploding] = React.useState(false);
 
   function handleTabClick(tab: string) {
     setSelectedTab(tab);
+  }
+
+  function handleMouseUp() {
+    playActive();
+    setIsExploding(true);
+    setTimeout(() => {
+      setIsExploding(false);
+    }, 1000);
   }
 
   return (
@@ -113,7 +128,20 @@ export default function BuySellActions() {
         </div>
         {showAdvanced && <span>Advanced options here</span>}
       </div>
-      <button>{selectedTab === "LONG" ? "BUY / LONG" : "SELL / SHORT"}</button>
+      <div className='button-container'>
+        <button onMouseUp={handleMouseUp}>
+          {selectedTab === "LONG" ? "BUY / LONG" : "SELL / SHORT"}
+        </button>
+        {isExploding && (
+          <ConfettiExplosion
+            className='confetti-container'
+            particleCount={20}
+            force={0.7}
+            width={1500}
+            zIndex={2000}
+          />
+        )}
+      </div>
     </div>
   );
 }

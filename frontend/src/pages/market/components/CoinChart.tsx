@@ -3,14 +3,29 @@ import { ColorType, createChart, IChartApi } from "lightweight-charts";
 import brotliDecompressModule from "brotli-wasm";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
+import { useParams } from "react-router-dom";
 
 dayjs.extend(utc);
+
+export function EmojiBar() {
+  const emojis = ["🚀", "😍", "😭", "😱", "👎🏼"];
+  return (
+    <div className='emoji-bar'>
+      {emojis.map((emoji, index) => (
+        <span className='emoji' key={index}>
+          {emoji}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 export default function CoinChart() {
   const [isConnected, setIsConnected] = useState(false);
   const [brotliDecompress, setBrotliDecompress] = useState<any>(null);
   const [ws, setWs] = useState<WebSocket | null>(null);
-  const symbol = "ETH-PERP";
+  const { marketSymbol } = useParams<{ marketSymbol: string }>();
+  const symbol = marketSymbol?.toUpperCase();
   const [klineData, setKlineData] = useState<any[]>([]);
   const interval = "1m";
   const channelName = `${symbol}@kline_${interval}`;
@@ -99,7 +114,7 @@ export default function CoinChart() {
         chartRef.current = null;
       }
     };
-  }, []); // Only create chart once
+  }, []);
 
   // Update chart data when klineData changes
   useEffect(() => {
@@ -207,6 +222,7 @@ export default function CoinChart() {
   return (
     <div className='coin-chart'>
       <div ref={chartContainerRef} style={{ width: "100%", height: "500px" }} />
+      <EmojiBar />
     </div>
   );
 }

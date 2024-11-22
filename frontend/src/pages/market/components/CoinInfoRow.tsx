@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import classNames from "classnames";
 import brotliDecompressModule from "brotli-wasm";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import symbolToImageSource from "../../../helpers/symbolToImageSource";
 
 interface Ticker {
@@ -18,30 +18,22 @@ interface Ticker {
 
 export default function CoinInfoRow() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { marketSymbol } = useParams<{ marketSymbol: string }>();
-  const coinShortName = (marketSymbol || "").toUpperCase().slice(0, 3);
   const [ticker, setTicker] = useState<Ticker | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [brotliDecompress, setBrotliDecompress] = useState<any>(null);
   const marketSelectOptions = ["ETH-PERP", "BTC-PERP"];
-  const [selectedMarketValue, setSelectedMarketValue] = useState(
-    (marketSymbol || "").toUpperCase()
-  );
   const wsRef = useRef<WebSocket | null>(null);
 
-  function handleChange(event: React.ChangeEvent<HTMLSelectElement>) {
-    console.log("naving to", event.target.value);
-    setSelectedMarketValue(event.target.value);
-    navigate(`/market/${event.target.value.toLowerCase()}`);
-    // Clear existing ticker data when switching symbols
-    setTicker(null);
+  // Derive market value from URL parameter
+  const currentMarket = (marketSymbol || "").toUpperCase();
 
-    // Close existing WebSocket connection and create a new one
-    if (wsRef.current) {
-      wsRef.current.close();
-      setWs(null);
-    }
+  function handleChange(event: React.ChangeEvent<HTMLSelectElement>) {
+    const newValue = event.target.value;
+    console.log("navigating to", newValue);
+    navigate(`/market/${newValue.toLowerCase()}`);
   }
 
   useEffect(() => {
@@ -51,23 +43,25 @@ export default function CoinInfoRow() {
   }, []);
 
   const connect = useCallback(() => {
-    if (!brotliDecompress) return;
+    if (!brotliDecompress || !currentMarket) return;
 
     // Close existing connection if any
     if (wsRef.current) {
+      console.log("Closing existing connection for", currentMarket);
       wsRef.current.close();
     }
 
     try {
+      console.log("Creating new WebSocket connection for", currentMarket);
       const websocket = new WebSocket(
         "wss://wsprod.vest.exchange/ws-api?version=1.0&xwebsocketserver=restserver0"
       );
-      // Store the WebSocket instance in both state and ref
+
       wsRef.current = websocket;
       setWs(websocket);
 
       websocket.onopen = () => {
-        console.log("Connected to Ticker WebSocket");
+        console.log("Connected to Ticker WebSocket for", currentMarket);
         setIsConnected(true);
 
         websocket.send(
@@ -115,8 +109,9 @@ export default function CoinInfoRow() {
             parsedData.channel === "tickers" &&
             Array.isArray(parsedData.data)
           ) {
+            // Only update ticker if it matches current market from URL
             const ticker = parsedData.data.find(
-              (t: any) => t?.symbol === selectedMarketValue
+              (t: any) => t?.symbol === currentMarket
             );
             if (ticker) setTicker(ticker);
           }
@@ -126,39 +121,45 @@ export default function CoinInfoRow() {
       };
 
       websocket.onerror = (error) => {
-        console.error("WebSocket error:", error);
+        console.error("WebSocket error for", currentMarket, error);
         setIsConnected(false);
       };
 
       websocket.onclose = () => {
-        console.log("WebSocket closed");
+        console.log("WebSocket closed for", currentMarket);
         setIsConnected(false);
+
         if (wsRef.current === websocket) {
           wsRef.current = null;
         }
       };
-
-      setWs(websocket);
     } catch (error) {
       console.error("Connection error:", error);
     }
-  }, [brotliDecompress, selectedMarketValue]);
+  }, [brotliDecompress, currentMarket]);
 
+  // Connect/reconnect when URL changes
   useEffect(() => {
+    // Clear existing ticker when URL changes
+    setTicker(null);
+
+    // Establish new connection
     connect();
+
     return () => {
-      if (ws) {
-        ws.close();
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
       }
     };
-  }, [connect, selectedMarketValue]);
+  }, [connect, location.pathname]);
 
   return (
     <section className='coin-info-row'>
       <div className='icon-and-coin-name'>
         <img src={symbolToImageSource(marketSymbol)} alt='Coin logo' />
-        {/* <h2>{selectedMarketValue}</h2> */}
-        <select value={selectedMarketValue} onChange={handleChange}>
+        <h2>{currentMarket}</h2>
+        <select value={currentMarket} onChange={handleChange}>
           {marketSelectOptions.map((marketSelectOption) => (
             <option key={marketSelectOption} value={marketSelectOption}>
               {marketSelectOption}
@@ -172,7 +173,7 @@ export default function CoinInfoRow() {
       </div>
       <div>
         <h3>24H CHANGE</h3>
-        <p className={Number(ticker?.priceChange) || 0 < 0 ? "red" : "green"}>
+        <p className={ticker?.priceChange || 1 < 0 ? "red" : "green"}>
           {ticker?.priceChange && ticker?.priceChangePercent
             ? `$${ticker.priceChange} (${ticker.priceChangePercent}%)`
             : "-"}
@@ -186,14 +187,14 @@ export default function CoinInfoRow() {
         <h3>LONG OPEN INTEREST</h3>
         <p className='green'>
           {ticker?.imbalance || "-"}
-          {` ${selectedMarketValue.slice(0, 3)}`}
+          {` ${currentMarket.slice(0, 3)}`}
         </p>
       </div>
       <div>
         <h3>SHORT OPEN INTEREST</h3>
         <p className='green'>
           {ticker?.imbalance || "-"}
-          {` ${selectedMarketValue.slice(0, 3)}`}
+          {` ${currentMarket.slice(0, 3)}`}
         </p>
       </div>
     </section>

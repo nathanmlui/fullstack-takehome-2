@@ -157,7 +157,7 @@ export default function CoinInfoRow() {
     <section className='coin-info-row'>
       <div className='icon-and-coin-name'>
         <img src={symbolToImageSource(marketSymbol)} alt='Coin logo' />
-        <h2>{selectedMarketValue}</h2>
+        {/* <h2>{selectedMarketValue}</h2> */}
         <select value={selectedMarketValue} onChange={handleChange}>
           {marketSelectOptions.map((marketSelectOption) => (
             <option key={marketSelectOption} value={marketSelectOption}>

@@ -24,7 +24,7 @@ export default function CoinInfoRow() {
   const [isConnected, setIsConnected] = useState(false);
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [brotliDecompress, setBrotliDecompress] = useState<any>(null);
-  const marketSelectOptions = ["ETH-PERP", "BTC-PERP"];
+  const marketSelectOptions = ["ETH-PERP", "BTC-PERP"]; // Add more markets here
   const wsRef = useRef<WebSocket | null>(null);
 
   // Derive market value from URL parameter
@@ -152,16 +152,17 @@ export default function CoinInfoRow() {
         wsRef.current = null;
       }
     };
-  }, [connect, location.pathname]);
+  }, [connect, location.pathname]); // Reconnect when URL changes
 
   return (
     <section className='coin-info-row'>
       <div className='icon-and-coin-name'>
+        {/* <h2>{currentMarket}</h2> */}
         <img src={symbolToImageSource(marketSymbol)} alt='Coin logo' />
-        <h2>{currentMarket}</h2>
         <select value={currentMarket} onChange={handleChange}>
           {marketSelectOptions.map((marketSelectOption) => (
             <option key={marketSelectOption} value={marketSelectOption}>
+              <span></span>
               {marketSelectOption}
             </option>
           ))}

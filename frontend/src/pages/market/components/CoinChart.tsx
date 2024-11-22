@@ -3,9 +3,17 @@ import { ColorType, createChart, IChartApi } from "lightweight-charts";
 import brotliDecompressModule from "brotli-wasm";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 
 dayjs.extend(utc);
+
+type KLineData = {
+  time: number;
+  open: string;
+  high: string;
+  low: string;
+  close: string;
+};
 
 export function EmojiBar() {
   const emojis = ["🚀", "😍", "😭", "😱", "👎🏼"];
@@ -27,23 +35,24 @@ export default function CoinChart() {
   const { marketSymbol } = useParams<{ marketSymbol: string }>();
   const symbol = marketSymbol?.toUpperCase();
   const [klineData, setKlineData] = useState<any[]>([]);
+  const location = useLocation();
   const interval = "1m";
   const channelName = `${symbol}@kline_${interval}`;
 
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candlestickSeriesRef = useRef<any>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
   const formatKLineData = useCallback((data: any | any[]) => {
     const formatSingle = (kline: any) => ({
-      time: Math.floor(Number(kline[0]) / 1000), //Convert epoch to UTC timestamp
+      time: Math.floor(Number(kline[0]) / 1000),
       open: parseFloat(kline[1]),
       high: parseFloat(kline[2]),
       low: parseFloat(kline[3]),
       close: parseFloat(kline[4]),
     });
 
-    // KLines response from WS is a single array of values, but REST response is an array of arrays
     return Array.isArray(data[0]) ? data.map(formatSingle) : formatSingle(data);
   }, []);
 
@@ -60,8 +69,13 @@ export default function CoinChart() {
     };
   }, []);
 
-  // Fetch initial data once
+  // Fetch initial data when symbol changes
   useEffect(() => {
+    if (!symbol) return;
+
+    console.log("Fetching initial data for", symbol);
+    setKlineData([]);
+
     fetch(`https://serverprod.vest.exchange/v2/klines?symbol=${symbol}`, {
       headers: {
         xrestservermm: "restserver0",
@@ -69,18 +83,25 @@ export default function CoinChart() {
     })
       .then((response) => response.json())
       .then((data) => {
-        console.log("KLINES fetch", data);
+        console.log("KLINES fetch for", symbol, data);
         setKlineData(data);
       })
       .catch((error) => console.error("Failed to fetch klines:", error));
-  }, []); // Only fetch once on mount
+  }, [symbol]);
 
-  // Initialize chart once
+  // Initialize chart with ResizeObserver
   useEffect(() => {
-    if (!chartContainerRef.current || chartRef.current) return;
+    if (!chartContainerRef.current) return;
 
-    const chartOptions = {
-      autosize: true,
+    const container = chartContainerRef.current;
+    const parent = container.parentElement;
+
+    if (!parent) return;
+
+    // Create chart
+    const chart = createChart(container, {
+      width: parent.clientWidth,
+      height: parent.clientHeight,
       layout: {
         textColor: "white",
         background: { type: ColorType.Solid, color: "#161514" },
@@ -97,10 +118,10 @@ export default function CoinChart() {
           color: "#424242",
         },
       },
-    };
+    });
 
-    chartRef.current = createChart(chartContainerRef.current, chartOptions);
-    candlestickSeriesRef.current = chartRef.current.addCandlestickSeries({
+    chartRef.current = chart;
+    candlestickSeriesRef.current = chart.addCandlestickSeries({
       upColor: "#26a69a",
       downColor: "#ef5350",
       borderVisible: false,
@@ -108,34 +129,68 @@ export default function CoinChart() {
       wickDownColor: "#ef5350",
     });
 
+    // Set initial data if available
+    if (klineData.length > 0) {
+      const formattedData = formatKLineData(klineData);
+      candlestickSeriesRef.current.setData(formattedData);
+      chart.timeScale().fitContent();
+    }
+
+    // Create ResizeObserver
+    const resizeObserver = new ResizeObserver(() => {
+      // Get the new parent dimensions
+      const width = parent.clientWidth;
+      const height = parent.clientHeight;
+
+      // Update container size to match parent
+      container.style.width = `${width}px`;
+      container.style.height = `${height}px`;
+
+      // Resize chart
+      chart.resize(width, height);
+      chart.timeScale().fitContent();
+    });
+
+    // Start observing
+    resizeObserver.observe(parent);
+
+    // Cleanup
     return () => {
-      if (chartRef.current) {
-        chartRef.current.remove();
-        chartRef.current = null;
-      }
+      resizeObserver.disconnect();
+      chart.remove();
     };
-  }, []);
+  }, [symbol, formatKLineData]);
 
   // Update chart data when klineData changes
   useEffect(() => {
     if (!candlestickSeriesRef.current || !klineData.length) return;
 
+    console.log("Updating chart data for", symbol);
     const formattedData = formatKLineData(klineData);
     candlestickSeriesRef.current.setData(formattedData);
     chartRef.current?.timeScale().fitContent();
-  }, [klineData]);
+  }, [klineData, formatKLineData, symbol]);
 
-  // WebSocket connection
+  // WebSocket connection code remains the same...
   const connect = useCallback(() => {
     if (!brotliDecompress) return;
 
+    if (wsRef.current) {
+      console.log("Closing existing WebSocket for", symbol);
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+
     try {
+      console.log("Creating new WebSocket connection for", symbol);
       const websocket = new WebSocket(
         "wss://wsprod.vest.exchange/ws-api?version=1.0&xwebsocketserver=restserver0"
       );
+      wsRef.current = websocket;
+      setWs(websocket);
 
       websocket.onopen = () => {
-        console.log("Connected to KLine WebSocket");
+        console.log("Connected to KLine WebSocket for", symbol);
         setIsConnected(true);
 
         websocket.send(
@@ -175,16 +230,16 @@ export default function CoinChart() {
           const parsedData = JSON.parse(decodedData);
 
           if (parsedData.data === "PONG") {
-            console.log("PONG received");
+            console.log("PONG received for", symbol);
             return;
           }
 
-          // Handle new kline data
           if (parsedData.channel === channelName) {
-            console.log("new kline message", parsedData.data);
+            console.log("New kline message for", symbol, parsedData.data);
             const update = formatKLineData(parsedData.data);
-            console.log("updating with", update);
-            candlestickSeriesRef.current.update(update);
+            if (candlestickSeriesRef.current) {
+              candlestickSeriesRef.current.update(update);
+            }
           }
         } catch (error) {
           console.error("Message processing error:", error);
@@ -192,36 +247,35 @@ export default function CoinChart() {
       };
 
       websocket.onerror = (error) => {
-        console.error("WebSocket error:", error);
+        console.error("WebSocket error for", symbol, error);
         setIsConnected(false);
       };
 
       websocket.onclose = () => {
-        console.log("WebSocket closed");
+        console.log("WebSocket closed for", symbol);
         setIsConnected(false);
+        if (wsRef.current === websocket) {
+          wsRef.current = null;
+        }
       };
-
-      setWs(websocket);
     } catch (error) {
       console.error("Connection error:", error);
     }
-  }, [brotliDecompress, channelName]);
+  }, [brotliDecompress, symbol, channelName]);
 
-  // Connect WebSocket once when ready
   useEffect(() => {
-    if (brotliDecompress && !ws) {
-      connect();
-    }
+    connect();
     return () => {
-      if (ws) {
-        ws.close();
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
       }
     };
-  }, [brotliDecompress, connect, ws]);
+  }, [connect, location.pathname]);
 
   return (
     <div className='coin-chart'>
-      <div ref={chartContainerRef} style={{ width: "100%", height: "500px" }} />
+      <div className='coin-chart-container-ref' ref={chartContainerRef} />
       <EmojiBar />
     </div>
   );

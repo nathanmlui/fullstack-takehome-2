@@ -29,7 +29,7 @@ body {
   margin: 20px 40px 0 40px;
   justify-content: center;
   height: 100%;
-  gap: 24px;
+  gap: 20px;
 }
 
 .header {
@@ -103,6 +103,8 @@ body {
   flex-direction: row;
   gap: 12px;
   justify-content: flex-start;
+  margin-right: 24px;
+  min-width: 180px;
 }
 
 .icon-and-coin-name h2,
@@ -137,15 +139,26 @@ div.graph-and-actions {
   flex-direction: row;
   justify-content: space-between;
   align-items: flex-start;
+  width: 100%;
+  gap: 16px;
+  min-width: 0;
 }
 
 .coin-chart {
-  flex-grow: 2;
-  height: 500px;
+  flex: 1 1 auto;
+  height: 553px;
+  min-width: 0;
+  width: 100%;
+}
+
+.coin-chart .coin-chart-container-ref {
+  height: 100%;
+  width: 100%;
+  position: relative;
 }
 
 .buy-sell-actions {
-  flex-grow: 1;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   background-color: var(--bg-light2);
@@ -153,6 +166,23 @@ div.graph-and-actions {
   /* height: 460px;  Min height should be same as height of graph*/
   gap: 12px;
   max-width: 410px;
+  min-width: 320px;
+}
+
+.market-page-content .tabs {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  border-bottom: 1px solid var(--border-grey);
+  margin-bottom: 20px;
+}
+
+.market-page-content .tabs .tab {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 16.8px;
+  padding: 20px 20px;
 }
 
 .buy-sell-actions .tabs {
@@ -164,14 +194,19 @@ div.graph-and-actions {
 .buy-sell-actions .tabs .tab {
   flex-grow: 1;
   text-align: center;
-  border-bottom: 1px solid var(--border-grey);
   font-size: 14px;
   font-weight: 400;
   line-height: 16.8px;
   padding: 20px 0;
 }
 
+.tabs .active {
+  color: #ff5a44;
+  border-bottom: 1px solid #ff5a44;
+}
+
 .buy-sell-actions .tabs .tab:hover,
+.market-page-content .tabs .tab:hover,
 .account-menu .notifications:hover,
 .account-menu .account:hover {
   cursor: pointer;
@@ -186,11 +221,6 @@ div.graph-and-actions {
 .buy-sell-actions .advanced:hover img {
   color: white; /* For text elements */
   filter: brightness(0) invert(1); /* For images */
-}
-
-.buy-sell-actions .tabs .active {
-  color: #ff5a44;
-  border-bottom: 1px solid #ff5a44;
 }
 
 .buy-sell-actions .actions {
